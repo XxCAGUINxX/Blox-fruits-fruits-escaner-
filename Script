@@ -1,0 +1,90 @@
+
+
+-- CONFIGURACIÓN
+local fruit_names = {
+    "Bomb", "Spike", "Chop", "Spring", "Kilo", "Smoke", "Flame", "Ice",
+    "Sand", "Dark", "Revive", "Diamond", "Light", "Rubber", "Barrier",
+    "Magma", "Quake", "Human: Buddha", "Love", "Spider", "Phoenix",
+    "Portal", "Rumble", "Paw", "Gravity", "Dough", "Shadow",
+    "Venom", "Control", "Spirit", "Dragon", "Leopard"
+}
+
+local mythical_fruits = {"Dragon", "Leopard", "Dough", "Spirit", "Venom", "Shadow"}
+
+local teleport_to_fruit = false
+local mythical_only = false
+local god_mode = false
+
+-- ISLAS DISPONIBLES (ejemplo)
+local islands = {
+    ["Starter"] = Vector3.new(0, 20, 0),
+    ["Jungle"] = Vector3.new(300, 50, 400),
+    ["Desert"] = Vector3.new(1000, 40, -800)
+    -- ⚠️ Agrega más coordenadas aquí
+}
+
+-- 🗺️ Teletransportarse a isla
+local function teleportToIsland(islandName)
+    local pos = islands[islandName]
+    if pos then
+        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(pos)
+        print("Teletransportado a: "..islandName)
+    else
+        warn("Isla no encontrada.")
+    end
+end
+
+-- 🍏 Detector de frutas
+local function checkForFruits()
+    for _, v in pairs(game.Workspace:GetDescendants()) do
+        if v:IsA("Tool") and table.find(fruit_names, v.Name) then
+            local isMythical = table.find(mythical_fruits, v.Name) ~= nil
+            if not mythical_only or isMythical then
+                game.StarterGui:SetCore("SendNotification", {
+                    Title = "¡Fruta Detectada!",
+                    Text = "Encontraste: " .. v.Name,
+                    Duration = 5
+                })
+                if teleport_to_fruit then
+                    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(v.Handle.Position)
+                end
+            end
+        end
+    end
+end
+
+-- 🛡️ Inmunidad al daño (modo dios)
+game.Players.LocalPlayer.CharacterAdded:Connect(function(char)
+    char:WaitForChild("Humanoid").HealthChanged:Connect(function()
+        if god_mode then
+            char.Humanoid.Health = char.Humanoid.MaxHealth
+        end
+    end)
+end)
+
+-- 🔘 Mini menú (muy simple)
+local UserInputService = game:GetService("UserInputService")
+
+UserInputService.InputBegan:Connect(function(input, processed)
+    if processed then return end
+
+    if input.KeyCode == Enum.KeyCode.F then
+        teleport_to_fruit = not teleport_to_fruit
+        print("Teleport a fruta: "..tostring(teleport_to_fruit))
+    elseif input.KeyCode == Enum.KeyCode.M then
+        mythical_only = not mythical_only
+        print("Solo míticas: "..tostring(mythical_only))
+    elseif input.KeyCode == Enum.KeyCode.G then
+        god_mode = not god_mode
+        print("Modo Dios: "..tostring(god_mode))
+    elseif input.KeyCode == Enum.KeyCode.I then
+        teleportToIsland("Jungle") -- ejemplo: Jungle
+    end
+end)
+
+-- 🌀 Loop principal
+while wait(5) do
+    pcall(function()
+        checkForFruits()
+    end)
+end

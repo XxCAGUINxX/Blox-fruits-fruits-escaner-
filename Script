@@ -13,9 +13,8 @@ local teleport_to_fruit = false
 local mythical_only = false
 local god_mode = false
 
--- ISLAS MAR 1 Y MAR 2 (Ejemplos comunes)
+-- ISLAS DEL MAR 1 Y 2 (coordenadas aproximadas)
 local islands = {
-    -- MAR 1
     ["Starter"] = Vector3.new(0, 20, 0),
     ["Pirate"] = Vector3.new(820, 50, -700),
     ["Desert"] = Vector3.new(1500, 40, -2000),
@@ -23,49 +22,54 @@ local islands = {
     ["Jungle"] = Vector3.new(350, 50, 1300),
     ["Marine"] = Vector3.new(-500, 80, 1000),
 
-    -- MAR 2
     ["Dawn"] = Vector3.new(4500, 70, -4500),
     ["Ice2"] = Vector3.new(5200, 60, -3100),
     ["Dark"] = Vector3.new(7000, 30, -3200),
     ["Colosseum"] = Vector3.new(7600, 120, -1400),
-    ["Forest"] = Vector3.new(6200, 80, 3500)
+    ["Forest"] = Vector3.new(6200, 80, 3500),
 }
 
--- 🗺️ Teletransportarse a isla
+-- TELETRANSPORTE A ISLA
 local function teleportToIsland(islandName)
     local pos = islands[islandName]
     if pos then
-        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(pos)
-        game.StarterGui:SetCore("SendNotification", {
-            Title = "Teletransporte",
-            Text = "Isla: " .. islandName,
-            Duration = 3
-        })
+        local player = game.Players.LocalPlayer
+        if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            player.Character.HumanoidRootPart.CFrame = CFrame.new(pos)
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "Teletransporte",
+                Text = "Isla: " .. islandName,
+                Duration = 3
+            })
+        end
     else
-        warn("Isla no encontrada.")
+        warn("Isla no encontrada: "..tostring(islandName))
     end
 end
 
--- 🍏 Detector de frutas
+-- DETECTOR DE FRUTAS
 local function checkForFruits()
     for _, v in pairs(game.Workspace:GetDescendants()) do
         if v:IsA("Tool") and table.find(fruit_names, v.Name) then
             local isMythical = table.find(mythical_fruits, v.Name) ~= nil
-            if not mythical_only or isMythical then
+            if (not mythical_only or isMythical) then
                 game.StarterGui:SetCore("SendNotification", {
                     Title = "¡Fruta Detectada!",
                     Text = "Encontraste: " .. v.Name,
                     Duration = 5
                 })
                 if teleport_to_fruit and v:FindFirstChild("Handle") then
-                    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(v.Handle.Position)
+                    local player = game.Players.LocalPlayer
+                    if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                        player.Character.HumanoidRootPart.CFrame = CFrame.new(v.Handle.Position)
+                    end
                 end
             end
         end
     end
 end
 
--- 🛡️ Inmunidad al daño (modo dios)
+-- MODO DIOS
 game.Players.LocalPlayer.CharacterAdded:Connect(function(char)
     char:WaitForChild("Humanoid").HealthChanged:Connect(function()
         if god_mode then
@@ -74,33 +78,112 @@ game.Players.LocalPlayer.CharacterAdded:Connect(function(char)
     end)
 end)
 
--- 🔘 Mini menú de teclas
-local UserInputService = game:GetService("UserInputService")
+-- CREAMOS LA INTERFAZ DE USUARIO
+local playerGui = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 
-UserInputService.InputBegan:Connect(function(input, processed)
-    if processed then return end
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "BloxFruitModMenu"
+screenGui.Parent = playerGui
+screenGui.ResetOnSpawn = false
 
-    if input.KeyCode == Enum.KeyCode.F then
-        teleport_to_fruit = not teleport_to_fruit
-        print("Teleport a fruta: "..tostring(teleport_to_fruit))
-    elseif input.KeyCode == Enum.KeyCode.M then
-        mythical_only = not mythical_only
-        print("Solo míticas: "..tostring(mythical_only))
-    elseif input.KeyCode == Enum.KeyCode.G then
-        god_mode = not god_mode
-        print("Modo Dios: "..tostring(god_mode))
-    elseif input.KeyCode == Enum.KeyCode.I then
-        teleportToIsland("Jungle")
-    elseif input.KeyCode == Enum.KeyCode.O then
-        teleportToIsland("Pirate")
-    elseif input.KeyCode == Enum.KeyCode.P then
-        teleportToIsland("Desert")
-    end
+-- Fondo semi-transparente para menú
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 280, 0, 350)
+frame.Position = UDim2.new(0, 20, 0, 20)
+frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+frame.BackgroundTransparency = 0.2
+frame.BorderSizePixel = 0
+frame.Parent = screenGui
+
+-- Título
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundTransparency = 1
+title.Text = "Mod Menu Blox Fruits"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 20
+title.Parent = frame
+
+-- Helper para crear botones
+local function createButton(text, position, size, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = size or UDim2.new(0, 120, 0, 35)
+    btn.Position = position
+    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.Gotham
+    btn.TextSize = 16
+    btn.Text = text
+    btn.Parent = frame
+
+    btn.MouseButton1Click:Connect(callback)
+
+    btn.MouseEnter:Connect(function()
+        btn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+    end)
+    btn.MouseLeave:Connect(function()
+        btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    end)
+
+    return btn
+end
+
+-- Toggle buttons con estado
+local function createToggleButton(text, position, initialState, callback)
+    local btn = createButton(text .. ": OFF", position, nil, function()
+        initialState = not initialState
+        btn.Text = text .. (initialState and ": ON" or ": OFF")
+        callback(initialState)
+    end)
+    return btn
+end
+
+-- Botones toggle
+local btnTeleportFruit = createToggleButton("Teleport Fruta", UDim2.new(0, 10, 0, 40), teleport_to_fruit, function(state)
+    teleport_to_fruit = state
 end)
 
--- 🌀 Loop principal
-while wait(5) do
-    pcall(function()
-        checkForFruits()
+local btnMythicalOnly = createToggleButton("Solo Míticas", UDim2.new(0, 150, 0, 40), mythical_only, function(state)
+    mythical_only = state
+end)
+
+local btnGodMode = createToggleButton("Modo Dios", UDim2.new(0, 10, 0, 90), god_mode, function(state)
+    god_mode = state
+end)
+
+-- Botones para islas - layout tipo tablero (3 columnas)
+local islandNames = {}
+for islandName, _ in pairs(islands) do
+    table.insert(islandNames, islandName)
+end
+table.sort(islandNames)
+
+local startX = 10
+local startY = 140
+local btnWidth = 85
+local btnHeight = 30
+local gapX = 5
+local gapY = 5
+local cols = 3
+
+for i, islandName in ipairs(islandNames) do
+    local col = (i - 1) % cols
+    local row = math.floor((i - 1) / cols)
+    createButton(islandName, UDim2.new(0, startX + (btnWidth + gapX) * col, 0, startY + (btnHeight + gapY) * row), UDim2.new(0, btnWidth, 0, btnHeight), function()
+        teleportToIsland(islandName)
     end)
 end
+
+-- Botón para cerrar menú
+local btnClose = createButton("Cerrar Menú", UDim2.new(0, 150, 0, 90), UDim2.new(0, 120, 0, 35), function()
+    screenGui.Enabled = false
+end)
+
+-- Bucle principal para detectar frutas
+spawn(function()
+    while true do
+        wait(5)
+        pcall(checkForFruits)
+    end
+end)

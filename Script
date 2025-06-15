@@ -15,12 +15,42 @@ local teleport_to_fruit = false
 local mythical_only = false
 local god_mode = false
 
--- ISLAS DISPONIBLES (ejemplo)
+-- ISLAS DEL MAR 1 Y MAR 2 (con coordenadas aproximadas)
 local islands = {
-    ["Starter"] = Vector3.new(0, 20, 0),
-    ["Jungle"] = Vector3.new(300, 50, 400),
-    ["Desert"] = Vector3.new(1000, 40, -800)
-    -- ⚠️ Agrega más coordenadas aquí
+    -- MAR 1
+    ["Starter"] = Vector3.new(0, 20, 0),               -- Isla inicial / Starter Island
+    ["Pirate"] = Vector3.new(820, 50, -700),           -- Pirate Village
+    ["Desert"] = Vector3.new(1500, 40, -2000),         -- Desert Island
+    ["Ice"] = Vector3.new(-2200, 60, -2000),           -- Ice Island
+    ["Jungle"] = Vector3.new(350, 50, 1300),           -- Jungle Island
+    ["Marine"] = Vector3.new(-500, 80, 1000),          -- Marine HQ
+
+    -- MAR 2
+    ["Dawn"] = Vector3.new(4500, 70, -4500),           -- Dawn Island
+    ["Ice2"] = Vector3.new(5200, 60, -3100),           -- Ice Island 2
+    ["Dark"] = Vector3.new(7000, 30, -3200),           -- Dark Island
+    ["Colosseum"] = Vector3.new(7600, 120, -1400),     -- Colosseum Island
+    ["Forest"] = Vector3.new(6200, 80, 3500),           -- Forest Island
+
+    -- Nota: las coordenadas son aproximadas según mapas y experiencia de juego
+    -- Las frutas suelen aparecer en áreas de spawn dentro de estas islas
+}
+
+-- Ejemplo de función para teletransportar y notificar la isla
+local function teleportToIsland(islandName)
+    local pos = islands[islandName]
+    if pos then
+        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(pos)
+        print("Teletransportado a: "..islandName)
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "Teletransporte",
+            Text = "Isla: " .. islandName,
+            Duration = 3
+        })
+    else
+        warn("Isla no encontrada.")
+    end
+end
 }
 
 -- 🗺️ Teletransportarse a isla

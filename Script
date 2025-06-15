@@ -1,5 +1,3 @@
-
-
 -- CONFIGURACIÓN
 local fruit_names = {
     "Bomb", "Spike", "Chop", "Spring", "Kilo", "Smoke", "Flame", "Ice",
@@ -15,42 +13,22 @@ local teleport_to_fruit = false
 local mythical_only = false
 local god_mode = false
 
--- ISLAS DEL MAR 1 Y MAR 2 (con coordenadas aproximadas)
+-- ISLAS MAR 1 Y MAR 2 (Ejemplos comunes)
 local islands = {
     -- MAR 1
-    ["Starter"] = Vector3.new(0, 20, 0),               -- Isla inicial / Starter Island
-    ["Pirate"] = Vector3.new(820, 50, -700),           -- Pirate Village
-    ["Desert"] = Vector3.new(1500, 40, -2000),         -- Desert Island
-    ["Ice"] = Vector3.new(-2200, 60, -2000),           -- Ice Island
-    ["Jungle"] = Vector3.new(350, 50, 1300),           -- Jungle Island
-    ["Marine"] = Vector3.new(-500, 80, 1000),          -- Marine HQ
+    ["Starter"] = Vector3.new(0, 20, 0),
+    ["Pirate"] = Vector3.new(820, 50, -700),
+    ["Desert"] = Vector3.new(1500, 40, -2000),
+    ["Ice"] = Vector3.new(-2200, 60, -2000),
+    ["Jungle"] = Vector3.new(350, 50, 1300),
+    ["Marine"] = Vector3.new(-500, 80, 1000),
 
     -- MAR 2
-    ["Dawn"] = Vector3.new(4500, 70, -4500),           -- Dawn Island
-    ["Ice2"] = Vector3.new(5200, 60, -3100),           -- Ice Island 2
-    ["Dark"] = Vector3.new(7000, 30, -3200),           -- Dark Island
-    ["Colosseum"] = Vector3.new(7600, 120, -1400),     -- Colosseum Island
-    ["Forest"] = Vector3.new(6200, 80, 3500),           -- Forest Island
-
-    -- Nota: las coordenadas son aproximadas según mapas y experiencia de juego
-    -- Las frutas suelen aparecer en áreas de spawn dentro de estas islas
-}
-
--- Ejemplo de función para teletransportar y notificar la isla
-local function teleportToIsland(islandName)
-    local pos = islands[islandName]
-    if pos then
-        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(pos)
-        print("Teletransportado a: "..islandName)
-        game.StarterGui:SetCore("SendNotification", {
-            Title = "Teletransporte",
-            Text = "Isla: " .. islandName,
-            Duration = 3
-        })
-    else
-        warn("Isla no encontrada.")
-    end
-end
+    ["Dawn"] = Vector3.new(4500, 70, -4500),
+    ["Ice2"] = Vector3.new(5200, 60, -3100),
+    ["Dark"] = Vector3.new(7000, 30, -3200),
+    ["Colosseum"] = Vector3.new(7600, 120, -1400),
+    ["Forest"] = Vector3.new(6200, 80, 3500)
 }
 
 -- 🗺️ Teletransportarse a isla
@@ -58,7 +36,11 @@ local function teleportToIsland(islandName)
     local pos = islands[islandName]
     if pos then
         game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(pos)
-        print("Teletransportado a: "..islandName)
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "Teletransporte",
+            Text = "Isla: " .. islandName,
+            Duration = 3
+        })
     else
         warn("Isla no encontrada.")
     end
@@ -75,7 +57,7 @@ local function checkForFruits()
                     Text = "Encontraste: " .. v.Name,
                     Duration = 5
                 })
-                if teleport_to_fruit then
+                if teleport_to_fruit and v:FindFirstChild("Handle") then
                     game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(v.Handle.Position)
                 end
             end
@@ -92,7 +74,7 @@ game.Players.LocalPlayer.CharacterAdded:Connect(function(char)
     end)
 end)
 
--- 🔘 Mini menú (muy simple)
+-- 🔘 Mini menú de teclas
 local UserInputService = game:GetService("UserInputService")
 
 UserInputService.InputBegan:Connect(function(input, processed)
@@ -108,7 +90,11 @@ UserInputService.InputBegan:Connect(function(input, processed)
         god_mode = not god_mode
         print("Modo Dios: "..tostring(god_mode))
     elseif input.KeyCode == Enum.KeyCode.I then
-        teleportToIsland("Jungle") -- ejemplo: Jungle
+        teleportToIsland("Jungle")
+    elseif input.KeyCode == Enum.KeyCode.O then
+        teleportToIsland("Pirate")
+    elseif input.KeyCode == Enum.KeyCode.P then
+        teleportToIsland("Desert")
     end
 end)
 

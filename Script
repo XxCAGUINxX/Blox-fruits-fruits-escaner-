@@ -13,8 +13,9 @@ local teleport_to_fruit = false
 local mythical_only = false
 local god_mode = false
 
--- ISLAS DEL MAR 1 Y 2 (coordenadas aproximadas)
+-- ISLAS DEL MAR 1 Y MAR 2 (coordenadas aproximadas)
 local islands = {
+    -- MAR 1
     ["Starter"] = Vector3.new(0, 20, 0),
     ["Pirate"] = Vector3.new(820, 50, -700),
     ["Desert"] = Vector3.new(1500, 40, -2000),
@@ -22,6 +23,7 @@ local islands = {
     ["Jungle"] = Vector3.new(350, 50, 1300),
     ["Marine"] = Vector3.new(-500, 80, 1000),
 
+    -- MAR 2
     ["Dawn"] = Vector3.new(4500, 70, -4500),
     ["Ice2"] = Vector3.new(5200, 60, -3100),
     ["Dark"] = Vector3.new(7000, 30, -3200),
@@ -29,39 +31,40 @@ local islands = {
     ["Forest"] = Vector3.new(6200, 80, 3500),
 }
 
--- TELETRANSPORTE A ISLA
+-- Función para teletransportar a isla
 local function teleportToIsland(islandName)
     local pos = islands[islandName]
     if pos then
-        local player = game.Players.LocalPlayer
-        if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            player.Character.HumanoidRootPart.CFrame = CFrame.new(pos)
+        local char = game.Players.LocalPlayer.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            char.HumanoidRootPart.CFrame = CFrame.new(pos)
             game.StarterGui:SetCore("SendNotification", {
                 Title = "Teletransporte",
                 Text = "Isla: " .. islandName,
                 Duration = 3
             })
+            print("Teletransportado a: "..islandName)
         end
     else
-        warn("Isla no encontrada: "..tostring(islandName))
+        warn("Isla no encontrada: ".. tostring(islandName))
     end
 end
 
--- DETECTOR DE FRUTAS
+-- Detector de frutas
 local function checkForFruits()
     for _, v in pairs(game.Workspace:GetDescendants()) do
         if v:IsA("Tool") and table.find(fruit_names, v.Name) then
             local isMythical = table.find(mythical_fruits, v.Name) ~= nil
-            if (not mythical_only or isMythical) then
+            if (not mythical_only) or isMythical then
                 game.StarterGui:SetCore("SendNotification", {
                     Title = "¡Fruta Detectada!",
                     Text = "Encontraste: " .. v.Name,
                     Duration = 5
                 })
                 if teleport_to_fruit and v:FindFirstChild("Handle") then
-                    local player = game.Players.LocalPlayer
-                    if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                        player.Character.HumanoidRootPart.CFrame = CFrame.new(v.Handle.Position)
+                    local char = game.Players.LocalPlayer.Character
+                    if char and char:FindFirstChild("HumanoidRootPart") then
+                        char.HumanoidRootPart.CFrame = CFrame.new(v.Handle.Position)
                     end
                 end
             end
@@ -69,121 +72,137 @@ local function checkForFruits()
     end
 end
 
--- MODO DIOS
+-- Modo Dios
 game.Players.LocalPlayer.CharacterAdded:Connect(function(char)
-    char:WaitForChild("Humanoid").HealthChanged:Connect(function()
+    local humanoid = char:WaitForChild("Humanoid")
+    humanoid.HealthChanged:Connect(function()
         if god_mode then
-            char.Humanoid.Health = char.Humanoid.MaxHealth
+            humanoid.Health = humanoid.MaxHealth
         end
     end)
 end)
 
--- CREAMOS LA INTERFAZ DE USUARIO
-local playerGui = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-
+-- Crear GUI principal
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "BloxFruitModMenu"
-screenGui.Parent = playerGui
-screenGui.ResetOnSpawn = false
+screenGui.Name = "ModMenuGui"
+screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+screenGui.Enabled = true
 
--- Fondo semi-transparente para menú
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 280, 0, 350)
-frame.Position = UDim2.new(0, 20, 0, 20)
-frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-frame.BackgroundTransparency = 0.2
-frame.BorderSizePixel = 0
-frame.Parent = screenGui
+-- Frame principal del menú
+local menuFrame = Instance.new("Frame")
+menuFrame.Size = UDim2.new(0, 300, 0, 400)
+menuFrame.Position = UDim2.new(0.5, -150, 0.5, -200)
+menuFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+menuFrame.Parent = screenGui
 
 -- Título
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 30)
+title.Text = "Menú Mod Blox Fruits"
+title.Size = UDim2.new(1, 0, 0, 40)
 title.BackgroundTransparency = 1
-title.Text = "Mod Menu Blox Fruits"
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextColor3 = Color3.new(1, 1, 1)
 title.Font = Enum.Font.GothamBold
-title.TextSize = 20
-title.Parent = frame
-
--- Helper para crear botones
-local function createButton(text, position, size, callback)
-    local btn = Instance.new("TextButton")
-    btn.Size = size or UDim2.new(0, 120, 0, 35)
-    btn.Position = position
-    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.Font = Enum.Font.Gotham
-    btn.TextSize = 16
-    btn.Text = text
-    btn.Parent = frame
-
-    btn.MouseButton1Click:Connect(callback)
-
-    btn.MouseEnter:Connect(function()
-        btn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-    end)
-    btn.MouseLeave:Connect(function()
-        btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    end)
-
-    return btn
-end
-
--- Toggle buttons con estado
-local function createToggleButton(text, position, initialState, callback)
-    local btn = createButton(text .. ": OFF", position, nil, function()
-        initialState = not initialState
-        btn.Text = text .. (initialState and ": ON" or ": OFF")
-        callback(initialState)
-    end)
-    return btn
-end
-
--- Botones toggle
-local btnTeleportFruit = createToggleButton("Teleport Fruta", UDim2.new(0, 10, 0, 40), teleport_to_fruit, function(state)
-    teleport_to_fruit = state
-end)
-
-local btnMythicalOnly = createToggleButton("Solo Míticas", UDim2.new(0, 150, 0, 40), mythical_only, function(state)
-    mythical_only = state
-end)
-
-local btnGodMode = createToggleButton("Modo Dios", UDim2.new(0, 10, 0, 90), god_mode, function(state)
-    god_mode = state
-end)
-
--- Botones para islas - layout tipo tablero (3 columnas)
-local islandNames = {}
-for islandName, _ in pairs(islands) do
-    table.insert(islandNames, islandName)
-end
-table.sort(islandNames)
-
-local startX = 10
-local startY = 140
-local btnWidth = 85
-local btnHeight = 30
-local gapX = 5
-local gapY = 5
-local cols = 3
-
-for i, islandName in ipairs(islandNames) do
-    local col = (i - 1) % cols
-    local row = math.floor((i - 1) / cols)
-    createButton(islandName, UDim2.new(0, startX + (btnWidth + gapX) * col, 0, startY + (btnHeight + gapY) * row), UDim2.new(0, btnWidth, 0, btnHeight), function()
-        teleportToIsland(islandName)
-    end)
-end
+title.TextScaled = true
+title.Parent = menuFrame
 
 -- Botón para cerrar menú
-local btnClose = createButton("Cerrar Menú", UDim2.new(0, 150, 0, 90), UDim2.new(0, 120, 0, 35), function()
+local btnClose = Instance.new("TextButton")
+btnClose.Size = UDim2.new(0, 80, 0, 30)
+btnClose.Position = UDim2.new(1, -90, 0, 10)
+btnClose.Text = "Cerrar"
+btnClose.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+btnClose.TextColor3 = Color3.new(1,1,1)
+btnClose.Parent = menuFrame
+
+-- Botones para funciones
+
+local function createToggleButton(text, position, stateVarName)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 260, 0, 40)
+    btn.Position = position
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextScaled = true
+    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    btn.Parent = menuFrame
+
+    local function updateText()
+        btn.Text = text .. ": " .. ( _G[stateVarName] and "ON" or "OFF" )
+    end
+
+    btn.MouseButton1Click:Connect(function()
+        _G[stateVarName] = not _G[stateVarName]
+        updateText()
+    end)
+
+    updateText()
+    return btn
+end
+
+-- Usar variables globales para toggles
+_G.teleport_to_fruit = teleport_to_fruit
+_G.mythical_only = mythical_only
+_G.god_mode = god_mode
+
+-- Crear botones
+local btnTeleportFruit = createToggleButton("Teleport a fruta", UDim2.new(0, 20, 0, 60), "teleport_to_fruit")
+local btnMythicalOnly = createToggleButton("Solo frutas míticas", UDim2.new(0, 20, 0, 110), "mythical_only")
+local btnGodMode = createToggleButton("Modo Dios", UDim2.new(0, 20, 0, 160), "god_mode")
+
+-- Botones para teletransportarse a islas
+local yPos = 210
+for islandName, _ in pairs(islands) do
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 260, 0, 30)
+    btn.Position = UDim2.new(0, 20, 0, yPos)
+    btn.Text = "Ir a isla: "..islandName
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.Font = Enum.Font.Gotham
+    btn.TextScaled = true
+    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    btn.Parent = menuFrame
+
+    btn.MouseButton1Click:Connect(function()
+        teleportToIsland(islandName)
+    end)
+    yPos = yPos + 35
+end
+
+-- Evento cerrar menú
+btnClose.MouseButton1Click:Connect(function()
     screenGui.Enabled = false
+    openMenuButton.Visible = true
 end)
 
--- Bucle principal para detectar frutas
-spawn(function()
-    while true do
-        wait(5)
-        pcall(checkForFruits)
-    end
+-- Botón circular flotante para abrir el menú (negro)
+local openMenuButton = Instance.new("ImageButton")
+openMenuButton.Size = UDim2.new(0, 50, 0, 50)
+openMenuButton.Position = UDim2.new(0, 30, 1, -70)
+openMenuButton.BackgroundTransparency = 1
+openMenuButton.Image = "rbxassetid://3570695787" -- círculo blanco
+openMenuButton.ImageColor3 = Color3.fromRGB(0, 0, 0) -- NEGRO
+openMenuButton.Parent = screenGui
+openMenuButton.Visible = false -- Solo visible cuando menú está cerrado
+
+-- Icono "+" encima del círculo (opcional)
+local plusLabel = Instance.new("TextLabel")
+plusLabel.Size = UDim2.new(1, 0, 1, 0)
+plusLabel.BackgroundTransparency = 1
+plusLabel.Text = "+"
+plusLabel.TextColor3 = Color3.new(1, 1, 1)
+plusLabel.Font = Enum.Font.GothamBold
+plusLabel.TextScaled = true
+plusLabel.Parent = openMenuButton
+
+-- Evento abrir menú
+openMenuButton.MouseButton1Click:Connect(function()
+    screenGui.Enabled = true
+    openMenuButton.Visible = false
 end)
+
+-- Loop principal: buscar frutas cada 5 segundos
+while wait(5) do
+    pcall(function()
+        checkForFruits()
+    end)
+end

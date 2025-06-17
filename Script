@@ -1,208 +1,99 @@
--- CONFIGURACIÓN
-local fruit_names = {
-    "Bomb", "Spike", "Chop", "Spring", "Kilo", "Smoke", "Flame", "Ice",
-    "Sand", "Dark", "Revive", "Diamond", "Light", "Rubber", "Barrier",
-    "Magma", "Quake", "Human: Buddha", "Love", "Spider", "Phoenix",
-    "Portal", "Rumble", "Paw", "Gravity", "Dough", "Shadow",
-    "Venom", "Control", "Spirit", "Dragon", "Leopard"
-}
+-- 📌 Configuración inicial
+local frutasImportantes = {"Dragon", "Leopard", "Venom", "Dough", "Control", "Spirit"}
+local frutasLogia = {"Flame", "Ice", "Dark", "Light", "Sand", "Smoke", "Magma", "Rumble"}
+local teleportDeEmergenciaIsla = "Pirate" -- Isla Pirata Novato
+local killAuraAlcance = 20 -- Alcance extra, normal es 15 aprox.
 
-local mythical_fruits = {"Dragon", "Leopard", "Dough", "Spirit", "Venom", "Shadow"}
+local autoFarmActivo = true
+local autoComerLogia = true
+local killAuraActiva = true
+local prioridadFruta = true
 
-local teleport_to_fruit = false
-local mythical_only = false
-local god_mode = false
-
--- ISLAS DEL MAR 1 Y MAR 2 (coordenadas aproximadas)
-local islands = {
-    -- MAR 1
-    ["Starter"] = Vector3.new(0, 20, 0),
+-- 🗺️ Islas principales
+local islas = {
     ["Pirate"] = Vector3.new(820, 50, -700),
-    ["Desert"] = Vector3.new(1500, 40, -2000),
-    ["Ice"] = Vector3.new(-2200, 60, -2000),
     ["Jungle"] = Vector3.new(350, 50, 1300),
-    ["Marine"] = Vector3.new(-500, 80, 1000),
-
-    -- MAR 2
-    ["Dawn"] = Vector3.new(4500, 70, -4500),
-    ["Ice2"] = Vector3.new(5200, 60, -3100),
-    ["Dark"] = Vector3.new(7000, 30, -3200),
-    ["Colosseum"] = Vector3.new(7600, 120, -1400),
-    ["Forest"] = Vector3.new(6200, 80, 3500),
+    ["Desert"] = Vector3.new(1500, 40, -2000),
+    ["Ice"] = Vector3.new(-2200, 60, -2000)
 }
 
--- Función para teletransportar a isla
-local function teleportToIsland(islandName)
-    local pos = islands[islandName]
-    if pos then
-        local char = game.Players.LocalPlayer.Character
-        if char and char:FindFirstChild("HumanoidRootPart") then
-            char.HumanoidRootPart.CFrame = CFrame.new(pos)
-            game.StarterGui:SetCore("SendNotification", {
-                Title = "Teletransporte",
-                Text = "Isla: " .. islandName,
-                Duration = 3
-            })
-            print("Teletransportado a: "..islandName)
-        end
-    else
-        warn("Isla no encontrada: ".. tostring(islandName))
-    end
-end
+-- 🌀 Crear interfaz flotante
+local gui = Instance.new("ScreenGui", game.CoreGui)
+local botonEmergencia = Instance.new("TextButton")
+botonEmergencia.Size = UDim2.new(0, 80, 0, 80)
+botonEmergencia.Position = UDim2.new(0, 20, 1, -100)
+botonEmergencia.Text = "🚨 TP"
+botonEmergencia.BackgroundColor3 = Color3.fromRGB(0,0,0)
+botonEmergencia.TextColor3 = Color3.fromRGB(255,255,255)
+botonEmergencia.Font = Enum.Font.GothamBold
+botonEmergencia.TextScaled = true
+botonEmergencia.Parent = gui
 
--- Detector de frutas
-local function checkForFruits()
-    for _, v in pairs(game.Workspace:GetDescendants()) do
-        if v:IsA("Tool") and table.find(fruit_names, v.Name) then
-            local isMythical = table.find(mythical_fruits, v.Name) ~= nil
-            if (not mythical_only) or isMythical then
-                game.StarterGui:SetCore("SendNotification", {
-                    Title = "¡Fruta Detectada!",
-                    Text = "Encontraste: " .. v.Name,
-                    Duration = 5
-                })
-                if teleport_to_fruit and v:FindFirstChild("Handle") then
-                    local char = game.Players.LocalPlayer.Character
-                    if char and char:FindFirstChild("HumanoidRootPart") then
-                        char.HumanoidRootPart.CFrame = CFrame.new(v.Handle.Position)
+botonEmergencia.MouseButton1Click:Connect(function()
+    local pos = islas[teleportDeEmergenciaIsla]
+    if pos then
+        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(pos)
+    end
+end)
+
+-- ⚡ Kill Aura ligera SOLO misión activa
+game:GetService("RunService").Heartbeat:Connect(function()
+    if killAuraActiva then
+        local player = game.Players.LocalPlayer
+        local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+        if root then
+            for _, v in pairs(workspace.Enemies:GetChildren()) do
+                if v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+                    if v:FindFirstChild("Boss") or v.Name:match("Boss") or v.Name:match("Bandit") then
+                        if (v.HumanoidRootPart.Position - root.Position).Magnitude <= killAuraAlcance then
+                            v.Humanoid.Health = v.Humanoid.Health - 50 -- Daño moderado
+                        end
                     end
                 end
             end
         end
     end
-end
+end)
 
--- Modo Dios
-game.Players.LocalPlayer.CharacterAdded:Connect(function(char)
-    local humanoid = char:WaitForChild("Humanoid")
-    humanoid.HealthChanged:Connect(function()
-        if god_mode then
-            humanoid.Health = humanoid.MaxHealth
+-- 🗡️ Auto Farm misiones
+spawn(function()
+    while wait(2) do
+        if autoFarmActivo then
+            local questNPC = workspace:FindFirstChild("QuestGiver") or workspace:FindFirstChild("Quest")
+            if questNPC then
+                game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = questNPC.HumanoidRootPart.CFrame + Vector3.new(0,3,0)
+                wait(1)
+                fireclickdetector(questNPC.ClickDetector)
+            end
         end
-    end)
-end)
-
--- Crear GUI principal
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "ModMenuGui"
-screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-screenGui.Enabled = true
-
--- Frame principal del menú
-local menuFrame = Instance.new("Frame")
-menuFrame.Size = UDim2.new(0, 300, 0, 400)
-menuFrame.Position = UDim2.new(0.5, -150, 0.5, -200)
-menuFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-menuFrame.Parent = screenGui
-
--- Título
-local title = Instance.new("TextLabel")
-title.Text = "Menú Mod Blox Fruits"
-title.Size = UDim2.new(1, 0, 0, 40)
-title.BackgroundTransparency = 1
-title.TextColor3 = Color3.new(1, 1, 1)
-title.Font = Enum.Font.GothamBold
-title.TextScaled = true
-title.Parent = menuFrame
-
--- Botón para cerrar menú
-local btnClose = Instance.new("TextButton")
-btnClose.Size = UDim2.new(0, 80, 0, 30)
-btnClose.Position = UDim2.new(1, -90, 0, 10)
-btnClose.Text = "Cerrar"
-btnClose.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-btnClose.TextColor3 = Color3.new(1,1,1)
-btnClose.Parent = menuFrame
-
--- Botones para funciones
-
-local function createToggleButton(text, position, stateVarName)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0, 260, 0, 40)
-    btn.Position = position
-    btn.TextColor3 = Color3.new(1,1,1)
-    btn.Font = Enum.Font.GothamBold
-    btn.TextScaled = true
-    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    btn.Parent = menuFrame
-
-    local function updateText()
-        btn.Text = text .. ": " .. ( _G[stateVarName] and "ON" or "OFF" )
     end
-
-    btn.MouseButton1Click:Connect(function()
-        _G[stateVarName] = not _G[stateVarName]
-        updateText()
-    end)
-
-    updateText()
-    return btn
-end
-
--- Usar variables globales para toggles
-_G.teleport_to_fruit = teleport_to_fruit
-_G.mythical_only = mythical_only
-_G.god_mode = god_mode
-
--- Crear botones
-local btnTeleportFruit = createToggleButton("Teleport a fruta", UDim2.new(0, 20, 0, 60), "teleport_to_fruit")
-local btnMythicalOnly = createToggleButton("Solo frutas míticas", UDim2.new(0, 20, 0, 110), "mythical_only")
-local btnGodMode = createToggleButton("Modo Dios", UDim2.new(0, 20, 0, 160), "god_mode")
-
--- Botones para teletransportarse a islas
-local yPos = 210
-for islandName, _ in pairs(islands) do
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0, 260, 0, 30)
-    btn.Position = UDim2.new(0, 20, 0, yPos)
-    btn.Text = "Ir a isla: "..islandName
-    btn.TextColor3 = Color3.new(1,1,1)
-    btn.Font = Enum.Font.Gotham
-    btn.TextScaled = true
-    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    btn.Parent = menuFrame
-
-    btn.MouseButton1Click:Connect(function()
-        teleportToIsland(islandName)
-    end)
-    yPos = yPos + 35
-end
-
--- Evento cerrar menú
-btnClose.MouseButton1Click:Connect(function()
-    screenGui.Enabled = false
-    openMenuButton.Visible = true
 end)
 
--- Botón circular flotante para abrir el menú (negro)
-local openMenuButton = Instance.new("ImageButton")
-openMenuButton.Size = UDim2.new(0, 50, 0, 50)
-openMenuButton.Position = UDim2.new(0, 30, 1, -70)
-openMenuButton.BackgroundTransparency = 1
-openMenuButton.Image = "rbxassetid://3570695787" -- círculo blanco
-openMenuButton.ImageColor3 = Color3.fromRGB(0, 0, 0) -- NEGRO
-openMenuButton.Parent = screenGui
-openMenuButton.Visible = false -- Solo visible cuando menú está cerrado
-
--- Icono "+" encima del círculo (opcional)
-local plusLabel = Instance.new("TextLabel")
-plusLabel.Size = UDim2.new(1, 0, 1, 0)
-plusLabel.BackgroundTransparency = 1
-plusLabel.Text = "+"
-plusLabel.TextColor3 = Color3.new(1, 1, 1)
-plusLabel.Font = Enum.Font.GothamBold
-plusLabel.TextScaled = true
-plusLabel.Parent = openMenuButton
-
--- Evento abrir menú
-openMenuButton.MouseButton1Click:Connect(function()
-    screenGui.Enabled = true
-    openMenuButton.Visible = false
+-- 🍍 Detector de frutas con prioridad
+spawn(function()
+    while wait(5) do
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("Tool") then
+                local nombre = v.Name
+                if prioridadFruta then
+                    -- Si es importante, TP rápido + Modo inmortal ON
+                    if table.find(frutasImportantes, nombre) then
+                        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(v.Handle.Position)
+                        -- Modo inmortal temporal
+                        game.Players.LocalPlayer.Character.Humanoid.Health = game.Players.LocalPlayer.Character.Humanoid.MaxHealth
+                    elseif table.find(frutasLogia, nombre) and autoComerLogia then
+                        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(v.Handle.Position)
+                        wait(1)
+                        v.Parent = game.Players.LocalPlayer.Backpack
+                        wait(0.5)
+                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("EatFruit", nombre)
+                        autoComerLogia = false -- Solo come una
+                    else
+                        -- Cualquier otra fruta normal
+                        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(v.Handle.Position)
+                    end
+                end
+            end
+        end
+    end
 end)
-
--- Loop principal: buscar frutas cada 5 segundos
-while wait(5) do
-    pcall(function()
-        checkForFruits()
-    end)
-end
